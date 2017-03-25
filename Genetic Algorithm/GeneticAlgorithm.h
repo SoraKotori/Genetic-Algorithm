@@ -1,13 +1,9 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <algorithm>
-#include <cmath>
 #include <functional>
-#include <iterator>
-#include <random>
 #include <numeric>
-#include <utility>
-#include <vector>
+#include <random>
 
 namespace GA
 {
@@ -17,9 +13,9 @@ namespace GA
     class GeneticAlgorithm
     {
     public:
-        typedef typename vector<bool> _ChromosomeType;
-        typedef typename tuple<_Type, _Type> _BinaryType;
-        typedef typename _Type(*_BinaryFunc)(const _BinaryType&);
+        typedef vector<bool> _ChromosomeType;
+        typedef tuple<_Type, _Type> _BinaryType;
+        typedef _Type(*_BinaryFunc)(const _BinaryType&);
 
         GeneticAlgorithm() = default;
         ~GeneticAlgorithm() = default;
@@ -51,6 +47,46 @@ namespace GA
                 }
             }
         }
+
+        bool Run()
+        {
+            bool _bResult = Converged();
+            if (!_bResult)
+            {
+                RouletteWheelSelection();
+                SinglePointCrossover();
+
+                swap(_Parent, _Child);
+            }
+
+            return !_bResult;
+        }
+
+        _Type GetMin(_BinaryType& _Binary)
+        {
+            auto _Max = max_element(_Fitness.begin(), _Fitness.end());
+            auto _Index = distance(_Fitness.begin(), _Max);
+
+            _Binary = Decoding(_Parent[_Index]);
+            return _FitnessFunc(_Binary);
+        }
+
+        _Type GetMin()
+        {
+            return GetMin(_BinaryType());
+        }
+
+    private:
+        vector<_ChromosomeType> _Parent;
+        vector<_ChromosomeType> _Child;
+        vector<_Type> _Fitness;
+
+        _Type _Shift = _Type(0);
+        _Type _Interval = _Type(0);
+        _BinaryFunc _FitnessFunc;
+
+        default_random_engine _Engine;
+        uniform_int_distribution<_ChromosomeType::size_type> _ChromosomeDistribution;
 
         bool Converged()
         {
@@ -139,46 +175,5 @@ namespace GA
             y = y * _Interval + _Shift;;
             return { x, y };
         }
-
-        bool Run()
-        {
-            bool _bResult = Converged();
-            if (!_bResult)
-            {
-                RouletteWheelSelection();
-                SinglePointCrossover();
-
-                swap(_Parent, _Child);
-            }
-
-            return !_bResult;
-        }
-
-        _Type GetMin(_BinaryType& _Binary)
-        {
-            auto _Max = max_element(_Fitness.begin(), _Fitness.end());
-            auto _Index = distance(_Fitness.begin(), _Max);
-
-            _Binary = Decoding(_Parent[_Index]);
-            return _FitnessFunc(_Binary);
-        }
-
-        _Type GetMin()
-        {
-            _BinaryType _Binary;
-            return GetMin(_Binary);
-        }
-
-    private:
-        vector<_ChromosomeType> _Parent;
-        vector<_ChromosomeType> _Child;
-        vector<_Type> _Fitness;
-
-        _Type _Shift = _Type(0);
-        _Type _Interval = _Type(0);
-        _BinaryFunc _FitnessFunc;
-
-        default_random_engine _Engine;
-        uniform_int_distribution<_ChromosomeType::size_type> _ChromosomeDistribution;
     };
 }
