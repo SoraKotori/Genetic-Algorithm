@@ -123,14 +123,14 @@ namespace GA
         {
             for (auto _First = _Child.begin(), _Last = _Child.end(); _First != _Last; ++_First)
             {
-                auto _Prev = _First++;
-                if (_First == _Last)
+                auto _Prev = _First->begin();
+                if (++_First == _Last)
                 {
                     break;
                 }
 
                 auto GetPoint = [this] { return _ChromosomeDistribution(_Engine); };
-                swap_ranges(_Prev->begin(), next(_Prev->begin(), GetPoint()), _First->begin());
+                swap_ranges(_Prev, next(_Prev, GetPoint()), _First->begin());
             }
         }
 
@@ -140,7 +140,7 @@ namespace GA
             auto _Middle = next(_First, _Chromosome.size() / 2);
             auto _Last = _Chromosome.end();
 
-            auto _BinaryFunc = [](const _Type _Init, const _ChromosomeType::value_type _Flag)
+            auto _BinaryFunc = [](const _Type _Init, const auto _Flag)
             {
                 return _Flag ? _Init * _Type(2) + _Type(1) : _Init * _Type(2);
             };
