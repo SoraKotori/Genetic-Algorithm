@@ -148,8 +148,8 @@ namespace GA
             auto x = accumulate(_First, _Middle, _Type(0), _BinaryFunc);
             auto y = accumulate(_Middle, _Last, _Type(0), _BinaryFunc);
 
-            x = x * _Interval + _Shift;;
-            y = y * _Interval + _Shift;;
+            x = x * _Interval + _Shift;
+            y = y * _Interval + _Shift;
             return { x, y };
         }
     };
