@@ -8,7 +8,7 @@ namespace GA
 {
     using namespace std;
 
-    template<typename _Type, size_t _Length, size_t _Count>
+    template<typename _Type, size_t _Length, size_t _Count, typename _EngineType = default_random_engine>
     class GeneticAlgorithm
     {
     public:
@@ -83,16 +83,16 @@ namespace GA
         _Type _Interval = _Type(0);
         _FitnessFunction _FitnessFunc;
 
-        default_random_engine _Engine;
+        _EngineType _Engine;
         uniform_int_distribution<_ChromosomeType::size_type> _ChromosomeDistribution;
 
         bool Converged()
         {
             bool _Converged = true;
 
-            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](const _ChromosomeType& _Chromosome)
+            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](const auto& _Chromosome)
             {
-                auto _Domain = Decoding(_Chromosome);
+                auto _Domain = this->Decoding(_Chromosome);
                 auto _Range = _FitnessFunc(_Domain);
                 auto _Value_Fitness = _Range > _Type(0) ? _Type(1) / _Range : -_Range;
 
