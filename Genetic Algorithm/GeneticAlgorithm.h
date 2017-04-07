@@ -8,19 +8,22 @@ namespace GA
 {
     using namespace std;
 
-    template<typename _Type, size_t _Length, size_t _Count, typename _EngineType = default_random_engine>
+    template<typename _Type, typename _EngineType = default_random_engine>
     class GeneticAlgorithm
     {
     public:
         typedef vector<bool> _ChromosomeType;
         typedef tuple<_Type, _Type> _DomainType;
         typedef _Type(*_FitnessFunction)(const _DomainType&);
+        typedef typename vector<_ChromosomeType>::size_type size_type;
 
         GeneticAlgorithm() = default;
         ~GeneticAlgorithm() = default;
 
         template<typename... _Args>
-        GeneticAlgorithm(_Type __min, _Type __max, _FitnessFunction __func, _Args&&... __args) :
+        GeneticAlgorithm(size_type _Length, size_type _Count, _Type __min, _Type __max,
+            _FitnessFunction __func, _Args&&... __args
+        ) :
             _Parent(_Count, _ChromosomeType(_Length)),
             _Child(_Count, _ChromosomeType(_Length)),
             _Fitness(_Count),

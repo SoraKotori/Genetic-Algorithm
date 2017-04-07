@@ -1,6 +1,5 @@
 #define _USE_MATH_DEFINES
 #include "GeneticAlgorithm.h"
-#include <chrono>
 #include <cstdlib>
 #include <iostream>
 
@@ -15,7 +14,7 @@ using namespace GA;
 
 int main(void)
 {
-    GeneticAlgorithm<double, 32, 1024> MyGA(-10, 10, [](const auto& _Domain)
+    GeneticAlgorithm<double> MyGA(32, 1024, -10, 10, [](const auto& _Domain)
     {
         auto x = get<0>(_Domain);
         auto y = get<1>(_Domain);
@@ -40,7 +39,7 @@ int main(void)
         }
     }
 
-    cout << "Time: " << (__rdtsc() - _Begin) / 2'500'000'000 << endl;
+    cout << "Time: " << static_cast<double>(__rdtsc() - _Begin) / 2.5e9 << endl;
 
     decltype(MyGA)::_DomainType _Domain;
     auto _BestSolution = MyGA.GetBestSolution(_Domain);
