@@ -90,7 +90,7 @@ namespace GA
         {
             bool _Converged = true;
 
-            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](const auto& _Chromosome)
+            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](const _ChromosomeType& _Chromosome)
             {
                 auto _Domain = Decoding(_Chromosome);
                 auto _Range = _FitnessFunc(_Domain);
