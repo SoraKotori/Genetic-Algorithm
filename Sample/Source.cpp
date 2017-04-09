@@ -14,7 +14,14 @@ using namespace GA;
 
 int main(void)
 {
-    GeneticAlgorithm<double> MyGA(32, 1024, -10, 10, [](const auto& _Domain)
+    size_t _PopulationSize{ 1024 };
+    size_t _ChromosomeLength{ 32 };
+    double _CrossoverRate{ 1.0 };
+    double _MinFitness{ -10 };
+    double _MaxFitness{ 10 };
+
+    GeneticAlgorithm<double> MyGA(_PopulationSize, _ChromosomeLength, _CrossoverRate,
+        _MinFitness, _MaxFitness, [](const auto& _Domain)
     {
         auto x = get<0>(_Domain);
         auto y = get<1>(_Domain);
@@ -24,7 +31,7 @@ int main(void)
 
     auto _Begin = __rdtsc();
 
-    auto Iterator = size_t(0);
+    auto Iterator = 0;
     for (; Iterator < 10000; Iterator++)
     {
         bool _Result = MyGA.Run();
@@ -40,11 +47,11 @@ int main(void)
     }
 
     cout << "Time: " << static_cast<double>(__rdtsc() - _Begin) / 2.5e9 << endl;
+    cout << "Iterator: " << Iterator << endl;
 
     decltype(MyGA)::_DomainType _Domain;
     auto _BestSolution = MyGA.GetBestSolution(_Domain);
 
-    cout << "Iterator: " << Iterator << endl;
     cout << "Minimum: " << _BestSolution << endl;
     cout << "x: " << get<0>(_Domain) << "  y: " << get<1>(_Domain) << endl;
 

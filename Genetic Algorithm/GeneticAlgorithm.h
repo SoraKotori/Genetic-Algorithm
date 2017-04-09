@@ -12,28 +12,30 @@ namespace GA
     class GeneticAlgorithm
     {
     public:
-        typedef vector<bool> _ChromosomeType;
-        typedef tuple<_Type, _Type> _DomainType;
-        typedef _Type(*_FitnessFunction)(const _DomainType&);
-        typedef typename vector<_ChromosomeType>::size_type size_type;
+        using _DomainType = tuple<_Type, _Type>;
+        using _FitnessFunction = _Type(*)(const _DomainType&);
+        using _ChromosomeType = vector<bool>;
+        using size_type1 = vector<_ChromosomeType>::size_type;
+        using size_type2 = _ChromosomeType::size_type;
 
         GeneticAlgorithm() = default;
         ~GeneticAlgorithm() = default;
 
         template<typename... _Args>
-        GeneticAlgorithm(size_type _Length, size_type _Count, _Type __min, _Type __max,
-            _FitnessFunction __func, _Args&&... __args
+        GeneticAlgorithm(size_type1 _PopulationSize, size_type2 _ChromosomeLength, double _CrossoverRate,
+            _Type _Min, _Type _Max, _FitnessFunction _Func, _Args&&... __args
         ) :
-            _Parent(_Count, _ChromosomeType(_Length)),
-            _Child(_Count, _ChromosomeType(_Length)),
-            _Fitness(_Count),
-            _Shift(min(__min, __max)),
-            _FitnessFunc(__func),
+            _Parent(_PopulationSize, _ChromosomeType(_ChromosomeLength)),
+            _Child(_PopulationSize, _ChromosomeType(_ChromosomeLength)),
+            _Fitness(_PopulationSize),
+            _Shift(min(_Min, _Max)),
+            _FitnessFunc(_Func),
             _Engine(forward<_Args>(__args)...),
-            _ChromosomeDistribution(0, _Length)
+            _CrossoverDistribution(_CrossoverRate),
+            _ChromosomeDistribution(0, _ChromosomeLength)
         {
-            auto _BinaryMax = pow(_Type(2), _Length / size_t(2)) - _Type(1);
-            _Interval = abs(__max - __min) / _BinaryMax;
+            auto&& _BinaryMax = pow(_Type(2), _ChromosomeLength / size_type2(2)) - _Type(1);
+            _Interval = abs(_Max - _Min) / _BinaryMax;
 
             Reset();
         }
@@ -42,16 +44,16 @@ namespace GA
         {
             bernoulli_distribution _Distribution;
 
-            for (auto& _Chromosome : _Parent)
+            for (auto&& _Chromosome : _Parent)
             {
                 generate(_Chromosome.begin(), _Chromosome.end(), [this, &_Distribution]
                 { return _Distribution(_Engine); });
             }
         }
 
-        bool Run()
+        decltype(auto) Run()
         {
-            bool _Converged = Converged();
+            auto&& _Converged = Converged();
             if (!_Converged)
             {
                 RouletteWheelSelection();
@@ -60,19 +62,20 @@ namespace GA
                 swap(_Parent, _Child);
             }
 
-            return !_Converged;
+            return (!_Converged);
         }
 
-        _Type GetBestSolution(_DomainType& _Domain)
+        template<typename _DomainType>
+        decltype(auto) GetBestSolution(_DomainType&& _Domain)
         {
-            auto _Max = max_element(_Fitness.begin(), _Fitness.end());
-            auto _Index = distance(_Fitness.begin(), _Max);
+            auto&& _Max = max_element(_Fitness.begin(), _Fitness.end());
+            auto&& _Index = distance(_Fitness.begin(), _Max);
 
             _Domain = Decoding(_Parent[_Index]);
-            return _FitnessFunc(_Domain);
+            return _FitnessFunc(forward<_DomainType>(_Domain));
         }
 
-        _Type GetBestSolution()
+        decltype(auto) GetBestSolution()
         {
             return GetBestSolution(_DomainType());
         }
@@ -82,22 +85,27 @@ namespace GA
         vector<_ChromosomeType> _Child;
         vector<_Type> _Fitness;
 
-        _Type _Shift = _Type(0);
-        _Type _Interval = _Type(0);
+        _Type _Shift{ 0 };
+        _Type _Interval{ 0 };
         _FitnessFunction _FitnessFunc;
 
         _EngineType _Engine;
-        uniform_int_distribution<_ChromosomeType::size_type> _ChromosomeDistribution;
+        bernoulli_distribution _CrossoverDistribution;
+        uniform_int_distribution<size_type1> _ChromosomeDistribution;
 
-        bool Converged()
+        decltype(auto) Converged()
         {
-            bool _Converged = true;
+            auto _Converged{ true };
 
-            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](const auto& _Chromosome)
+            transform(_Parent.begin(), _Parent.end(), _Fitness.begin(), [&](auto&& _Chromosome)
             {
-                auto _Domain = this->Decoding(_Chromosome);
-                auto _Range = _FitnessFunc(_Domain);
-                auto _Value_Fitness = _Range > _Type(0) ? _Type(1) / _Range : -_Range;
+#ifdef _MSC_VER
+                auto&& _Domain = Decoding(_Chromosome);
+#else
+                auto&& _Domain = this->Decoding(_Chromosome);
+#endif
+                auto&& _Range = _FitnessFunc(_Domain);
+                auto&& _Value_Fitness = _Range > _Type(0) ? _Type(1) / _Range : -_Range;
 
                 if (_Converged && _Value_Fitness != *_Fitness.begin())
                 {
@@ -112,48 +120,52 @@ namespace GA
 
         void RouletteWheelSelection()
         {
-            discrete_distribution<typename decltype(_Parent)::size_type>
-                _ParentDistribution(_Fitness.begin(), _Fitness.end());
+            discrete_distribution<size_type1> _ParentDistribution(_Fitness.begin(), _Fitness.end());
 
-            for (auto& _Chromosome : _Child)
+            for (auto&& _Chromosome : _Child)
             {
-                auto _ParentIndex = _ParentDistribution(_Engine);
+                auto&& _ParentIndex = _ParentDistribution(_Engine);
                 _Chromosome = _Parent[_ParentIndex];
             }
         }
 
         void SinglePointCrossover()
         {
-            for (auto _First = _Child.begin(), _Last = _Child.end(); _First != _Last; ++_First)
+            for (auto&& _First = _Child.begin(), &&_Last = _Child.end(); _First != _Last; ++_First)
             {
-                auto _Prev = _First->begin();
+                auto&& _Prev = _First->begin();
                 if (++_First == _Last)
                 {
                     break;
                 }
 
-                auto GetPoint = [this] { return _ChromosomeDistribution(_Engine); };
-                swap_ranges(_Prev, next(_Prev, GetPoint()), _First->begin());
+                auto&& _Crossover = _CrossoverDistribution(_Engine);
+                if (_Crossover)
+                {
+                    auto GetPoint{ [this] { return _ChromosomeDistribution(_Engine); } };
+                    swap_ranges(_Prev, next(_Prev, GetPoint()), _First->begin());
+                }
             }
         }
 
-        _DomainType Decoding(const _ChromosomeType& _Chromosome)
+        template<typename _ChromosomeType>
+        decltype(auto) Decoding(_ChromosomeType&& _Chromosome)
         {
-            auto _First = _Chromosome.begin();
-            auto _Middle = next(_First, _Chromosome.size() / 2);
-            auto _Last = _Chromosome.end();
+            auto&& _First = _Chromosome.begin();
+            auto&& _Middle = next(_First, _Chromosome.size() / 2);
+            auto&& _Last = _Chromosome.end();
 
-            auto _BinaryFunc = [](const _Type _Init, const auto _Flag)
+            auto BinaryFunc{ [](auto&& _Init, auto&& _Flag)
             {
-                return _Flag ? _Init * _Type(2) + _Type(1) : _Init * _Type(2);
-            };
+                return _Flag ? _Init * _Type{ 2 } +_Type{ 1 } : _Init * _Type{ 2 };
+            } };
 
-            auto x = accumulate(_First, _Middle, _Type(0), _BinaryFunc);
-            auto y = accumulate(_Middle, _Last, _Type(0), _BinaryFunc);
+            auto&& x = accumulate(_First, _Middle, _Type{ 0 }, BinaryFunc);
+            auto&& y = accumulate(_Middle, _Last, _Type{ 0 }, BinaryFunc);
 
             x = x * _Interval + _Shift;
             y = y * _Interval + _Shift;
-            return { x, y };
+            return make_tuple(x, y);
         }
     };
 }
