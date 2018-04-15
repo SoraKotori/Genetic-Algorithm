@@ -65,7 +65,7 @@ namespace GA
             return (!_Converged);
         }
 
-        template<typename _DomainType>
+
         decltype(auto) GetBestSolution(_DomainType&& _Domain)
         {
             auto&& _Max = max_element(_Fitness.begin(), _Fitness.end());
